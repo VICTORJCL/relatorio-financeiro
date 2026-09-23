@@ -1,0 +1,13 @@
+# variáveis
+*.env
+*.zip
+
+# pastas
+Arquivos/
+__pycache__/
+
+
+
+#  arquivos
+test.py
+example.py
