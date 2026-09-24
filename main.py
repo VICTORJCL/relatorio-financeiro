@@ -116,7 +116,7 @@ def executar(configuracao: Configuracao, repositorio: Repository, pasta: Path) -
     return falhas_de_download + falhas_de_carga
 
 
-class RelatorioFinanceiroRobton :
+class RelatorioFinanceiroRobtom :
     def materializar():
         logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
         configuracao = Configuracao.do_ambiente(ENV_DO_SERVIDOR if USAR_ENV_DO_SERVIDOR else None)
@@ -141,5 +141,5 @@ class RelatorioFinanceiroRobton :
 
 
 # if __name__ == "__main__":
-#     processo =  RelatorioFinanceiroRobton
+#     processo =  RelatorioFinanceiroRobtom
 #     processo.materializar()
