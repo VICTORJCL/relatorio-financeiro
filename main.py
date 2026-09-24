@@ -116,26 +116,30 @@ def executar(configuracao: Configuracao, repositorio: Repository, pasta: Path) -
     return falhas_de_download + falhas_de_carga
 
 
-def main() -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    configuracao = Configuracao.do_ambiente(ENV_DO_SERVIDOR if USAR_ENV_DO_SERVIDOR else None)
-    palantir = Palantir(job=JOB_NO_PALANTIR, url_base=configuracao.palantir_url)
-    palantir.pingar_entrada()
-    try:
-        banco = conectar_robtom(configuracao.banco_host, configuracao.banco_porta,
-                                configuracao.banco_nome, configuracao.banco_usuario,
-                                configuracao.banco_senha)
-        repositorio = Repository(banco, PASTA_DOS_RELATORIOS)
-        falhas = executar(configuracao, repositorio, PASTA_DOS_RELATORIOS)
-    except Exception:
-        logger.exception("Execução interrompida")
-        return 1
-    if falhas:
-        logger.error("Terminou com falhas: %s", "; ".join(falhas))
-        return 1
-    palantir.pingar_saida()
-    return 0
+class RelatorioFinanceiroRobton :
+    def materializar():
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+        configuracao = Configuracao.do_ambiente(ENV_DO_SERVIDOR if USAR_ENV_DO_SERVIDOR else None)
+        palantir = Palantir(job=JOB_NO_PALANTIR, url_base=configuracao.palantir_url)
+        palantir.pingar_entrada()
+        try:
+            banco = conectar_robtom(configuracao.banco_host, configuracao.banco_porta,
+                                    configuracao.banco_nome, configuracao.banco_usuario,
+                                    configuracao.banco_senha)
+            repositorio = Repository(banco, PASTA_DOS_RELATORIOS)
+            falhas = executar(configuracao, repositorio, PASTA_DOS_RELATORIOS)
+        except Exception:
+            logger.exception("Execução interrompida")
+            return 1
+        if falhas:
+            logger.error("Terminou com falhas: %s", "; ".join(falhas))
+            return 1
+        palantir.pingar_saida()
+    
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+
+
+# if __name__ == "__main__":
+#     processo =  RelatorioFinanceiroRobton
+#     processo.materializar()
