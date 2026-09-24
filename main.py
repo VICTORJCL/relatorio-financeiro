@@ -18,7 +18,7 @@ from coletor_relatorios.repository import ARQUIVO_POR_MODELO, PlanilhaVazia, Rep
 
 JOB_NO_PALANTIR = "relatorio-financeiro"
 PASTA_DOS_RELATORIOS = Path("Arquivos")
-USAR_ENV_DO_SERVIDOR = False
+USAR_ENV_DO_SERVIDOR = True
 ENV_DO_SERVIDOR = Path("/home/rodrigo/python/Mix-analyst-pg/.env")
 DIAS_DE_ATRASO = 1  # o dia corrente ainda está em movimento; carregar parcial trava o resto dele
 
