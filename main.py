@@ -5,6 +5,7 @@ import os
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -20,6 +21,24 @@ PASTA_DOS_RELATORIOS = Path("Arquivos")
 DIAS_DE_ATRASO = 1  # o dia corrente ainda está em movimento; carregar parcial trava o resto dele
 
 logger = logging.getLogger("automation")
+
+
+@dataclass(frozen=True)
+class Configuracao:
+    zanthus_url: str
+    zanthus_usuario: str
+    zanthus_senha: str
+    palantir_url: str
+
+    @classmethod
+    def do_ambiente(cls) -> "Configuracao":
+        load_dotenv("/home/rodrigo/python/Mix-analyst-pg/.env")
+        return cls(
+            zanthus_url=os.environ["URL"],
+            zanthus_usuario=os.environ["ZANTHUS_LOGIN"],
+            zanthus_senha=os.environ["ZANTHUS_SENHA"],
+            palantir_url=os.environ["PALANTIR_URL"],
+        )
 
 
 @contextmanager
@@ -68,11 +87,11 @@ def carregar_relatorios(repositorio: Repository) -> tuple[list[str], list[str]]:
     return resumo, falhas
 
 
-def executar(zanthus_url: str, usuario: str, senha: str,
-             repositorio: Repository, pasta: Path) -> list[str]:
+def executar(configuracao: Configuracao, repositorio: Repository, pasta: Path) -> list[str]:
     pasta.mkdir(exist_ok=True)
     with abrir_navegador() as page:
-        automacao = Automation(page, zanthus_url, usuario, senha)
+        automacao = Automation(page, configuracao.zanthus_url,
+                               configuracao.zanthus_usuario, configuracao.zanthus_senha)
         with registrar_etapa("login no Zanthus"):
             automacao.entrar()
         falhas_de_download = baixar_relatorios(automacao, date.today() - timedelta(days=DIAS_DE_ATRASO), pasta)
@@ -84,16 +103,12 @@ def executar(zanthus_url: str, usuario: str, senha: str,
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    load_dotenv()
-    palantir = Palantir(job=JOB_NO_PALANTIR, url_base=os.environ["PALANTIR_URL"])
+    configuracao = Configuracao.do_ambiente()
+    palantir = Palantir(job=JOB_NO_PALANTIR, url_base=configuracao.palantir_url)
     palantir.pingar_entrada()
     try:
-        falhas = executar(
-            zanthus_url=os.environ["URL"],
-            usuario=os.environ["ZANTHUS_LOGIN"],
-            senha=os.environ["ZANTHUS_SENHA"],
-            repositorio=Repository(conectar_robtom(), PASTA_DOS_RELATORIOS),
-            pasta=PASTA_DOS_RELATORIOS)
+        repositorio = Repository(conectar_robtom(), PASTA_DOS_RELATORIOS)
+        falhas = executar(configuracao, repositorio, PASTA_DOS_RELATORIOS)
     except Exception:
         logger.exception("Execução interrompida")
         return 1
