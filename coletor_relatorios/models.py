@@ -1,9 +1,7 @@
-import os
 from datetime import datetime, timedelta, timezone
 from functools import partial
 
 import peewee as pw
-from dotenv import load_dotenv
 
 FUSO_BRASILIA = timezone(timedelta(hours=-3))
 
@@ -12,12 +10,10 @@ texto = partial(pw.TextField, null=True)
 dinheiro = partial(pw.DecimalField, max_digits=12, decimal_places=2, null=True)
 percentual = partial(pw.DecimalField, max_digits=6, decimal_places=2, null=True)
 
-def conectar_robtom() -> pw.PostgresqlDatabase:
-    load_dotenv()
-    return pw.PostgresqlDatabase(
-        os.environ["ROBTOM_DB"], host=os.environ["ROBTOM_HOST"],
-        port=int(os.environ["ROBTOM_PORT"]), user=os.environ["ROBTOM_USER"],
-        password=os.environ["ROBTOM_PASSWORD"], connect_timeout=15)
+def conectar_robtom(host: str, porta: int, nome: str, usuario: str,
+                    senha: str) -> pw.PostgresqlDatabase:
+    return pw.PostgresqlDatabase(nome, host=host, port=porta, user=usuario,
+                                 password=senha, connect_timeout=15)
 
 
 class DataHoraComFuso(pw.DateTimeField):

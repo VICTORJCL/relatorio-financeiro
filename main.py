@@ -18,6 +18,8 @@ from coletor_relatorios.repository import ARQUIVO_POR_MODELO, PlanilhaVazia, Rep
 
 JOB_NO_PALANTIR = "relatorio-financeiro"
 PASTA_DOS_RELATORIOS = Path("Arquivos")
+USAR_ENV_DO_SERVIDOR = False
+ENV_DO_SERVIDOR = Path("/home/rodrigo/python/Mix-analyst-pg/.env")
 DIAS_DE_ATRASO = 1  # o dia corrente ainda está em movimento; carregar parcial trava o resto dele
 
 logger = logging.getLogger("automation")
@@ -29,15 +31,28 @@ class Configuracao:
     zanthus_usuario: str
     zanthus_senha: str
     palantir_url: str
+    banco_host: str
+    banco_porta: int
+    banco_nome: str
+    banco_usuario: str
+    banco_senha: str
 
     @classmethod
-    def do_ambiente(cls) -> "Configuracao":
-        load_dotenv("/home/rodrigo/python/Mix-analyst-pg/.env")
+    def do_ambiente(cls, arquivo_env: Path | None = None) -> "Configuracao":
+        """Sem `arquivo_env`, procura o `.env` na pasta do projeto."""
+        if arquivo_env and not arquivo_env.exists():
+            raise FileNotFoundError(f"arquivo de ambiente não encontrado: {arquivo_env}")
+        load_dotenv(arquivo_env)
         return cls(
-            zanthus_url=os.environ["URL"],
+            zanthus_url=os.environ["URL_ZANTHUS"],
             zanthus_usuario=os.environ["ZANTHUS_LOGIN"],
             zanthus_senha=os.environ["ZANTHUS_SENHA"],
             palantir_url=os.environ["PALANTIR_URL"],
+            banco_host=os.environ["ROBTOM_PG_HOST"],
+            banco_porta=int(os.environ["ROBTOM_PG_PORT"]),
+            banco_nome=os.environ["ROBTOM_PG_DB"],
+            banco_usuario=os.environ["ROBTOM_PG_USER"],
+            banco_senha=os.environ["ROBTOM_PG_PASSWORD"],
         )
 
 
@@ -103,11 +118,14 @@ def executar(configuracao: Configuracao, repositorio: Repository, pasta: Path) -
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    configuracao = Configuracao.do_ambiente()
+    configuracao = Configuracao.do_ambiente(ENV_DO_SERVIDOR if USAR_ENV_DO_SERVIDOR else None)
     palantir = Palantir(job=JOB_NO_PALANTIR, url_base=configuracao.palantir_url)
     palantir.pingar_entrada()
     try:
-        repositorio = Repository(conectar_robtom(), PASTA_DOS_RELATORIOS)
+        banco = conectar_robtom(configuracao.banco_host, configuracao.banco_porta,
+                                configuracao.banco_nome, configuracao.banco_usuario,
+                                configuracao.banco_senha)
+        repositorio = Repository(banco, PASTA_DOS_RELATORIOS)
         falhas = executar(configuracao, repositorio, PASTA_DOS_RELATORIOS)
     except Exception:
         logger.exception("Execução interrompida")

@@ -159,15 +159,15 @@ playwright install chromium
 Crie um `.env` na raiz:
 
 ```
-URL=                 # endereço do ERP
+URL_ZANTHUS=         # endereço do ERP
 ZANTHUS_LOGIN=
 ZANTHUS_SENHA=
 
-ROBTOM_HOST=
-ROBTOM_PORT=
-ROBTOM_DB=
-ROBTOM_USER=
-ROBTOM_PASSWORD=
+ROBTOM_PG_HOST=
+ROBTOM_PG_PORT=
+ROBTOM_PG_DB=
+ROBTOM_PG_USER=
+ROBTOM_PG_PASSWORD=
 
 PALANTIR_URL=         # endereço do monitor de jobs
 ```
