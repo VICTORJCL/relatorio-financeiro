@@ -10,7 +10,7 @@ from playwright.sync_api import Page, sync_playwright
 
 from coletor_relatorios.models import CancelamentoCupom, CancelamentoItem, Desconto, Raw
 
-NAVEGADOR_SEM_JANELA = False
+NAVEGADOR_SEM_JANELA = True
 TIMEOUT_EM_MILISSEGUNDOS = 10_000
 FORMATO_DA_DATA_NO_ZANTHUS = "%d-%m-%Y"
 
@@ -45,37 +45,37 @@ def abrir_navegador() -> Iterator[Page]:
     with sync_playwright() as playwright:
         navegador = playwright.chromium.launch(headless=NAVEGADOR_SEM_JANELA)
         try:
-            pagina = navegador.new_page()
-            pagina.set_default_timeout(TIMEOUT_EM_MILISSEGUNDOS)
-            yield pagina
+            page = navegador.new_page()
+            page.set_default_timeout(TIMEOUT_EM_MILISSEGUNDOS)
+            yield page
         finally:
             navegador.close()
 
 
-class Zanthus:
-    def __init__(self, pagina: Page, url: str, usuario: str, senha: str) -> None:
-        self.pagina = pagina
+class Automation:
+    def __init__(self, page: Page, url: str, usuario: str, senha: str) -> None:
+        self.page = page
         self.url = url
         self.usuario = usuario
         self.senha = senha
 
     def entrar(self) -> None:
-        self.pagina.goto(self.url)
-        self.pagina.fill(SELETOR_USUARIO, self.usuario)
-        self.pagina.fill(SELETOR_SENHA, self.senha)
-        self.pagina.get_by_role("button", name=BOTAO_ENTRAR).click()
-        self.pagina.wait_for_timeout(5000)
-        self.pagina.goto(self.url)
-        self.pagina.wait_for_timeout(3000)
+        self.page.goto(self.url)
+        self.page.fill(SELETOR_USUARIO, self.usuario)
+        self.page.fill(SELETOR_SENHA, self.senha)
+        self.page.get_by_role("button", name=BOTAO_ENTRAR).click()
+        self.page.wait_for_timeout(5000)
+        self.page.goto(self.url)
+        self.page.wait_for_timeout(3000)
 
     def baixar(self, relatorio: RelatorioZanthus, dia: date, destino: Path) -> None:
-        self.pagina.get_by_role("link", name=relatorio.link).click()
-        self.pagina.locator(SELETOR_TODAS_AS_LOJAS).first.click()
+        self.page.get_by_role("link", name=relatorio.link).click()
+        self.page.locator(SELETOR_TODAS_AS_LOJAS).first.click()
         for seletor in (relatorio.campo_data_inicial, relatorio.campo_data_final):
-            campo = self.pagina.locator(seletor)
+            campo = self.page.locator(seletor)
             campo.fill(dia.strftime(FORMATO_DA_DATA_NO_ZANTHUS))
             campo.press("Tab")  # com Enter, o calendário do campo troca a data digitada pela de hoje
-        with self.pagina.expect_download() as download:
-            with self.pagina.expect_popup():
-                self.pagina.locator(SELETOR_EXPORTAR).nth(POSICAO_DO_EXPORTAR_CSV).click()
+        with self.page.expect_download() as download:
+            with self.page.expect_popup():
+                self.page.locator(SELETOR_EXPORTAR).nth(POSICAO_DO_EXPORTAR_CSV).click()
         download.value.save_as(destino)

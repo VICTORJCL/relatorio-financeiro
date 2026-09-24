@@ -28,7 +28,7 @@ Uma execução por dia, sem intervenção humana:
 3. **Converte** cada CSV para tipos de verdade (datas, valores monetários, inteiros) e confere
    se o formato do relatório não mudou.
 4. **Carrega** no PostgreSQL, em três tabelas, sem nunca duplicar um dia já carregado.
-5. **Apaga** os arquivos que subiram com sucesso.
+5. **Apaga** os arquivos cujos dados já estão no banco.
 6. **Avisa o monitor** que terminou. Se algo falhou, esse aviso não vai, e a ausência dele é o
    alarme.
 
@@ -48,7 +48,7 @@ flowchart LR
     F -- sim --> H[pula]
     G --> I[apaga o CSV]
     I --> J[ping de saída<br/>no monitor]
-    H --> J
+    H --> I
 ```
 
 | Relatório no ERP | Tabela |
@@ -65,7 +65,7 @@ veio, só que tipado. Agregações e análises ficam para quem consome.
 ```
 main.py                   orquestra a execução e trata os erros de cada etapa
 coletor_relatorios/
-├── zanthus.py            navegador: login no ERP e download dos relatórios
+├── automation.py         navegador: login no ERP e download dos relatórios
 ├── repository.py         leitura dos CSVs, conversão pt-BR e carga no banco
 ├── models.py             modelos das três tabelas e a conexão com o PostgreSQL
 └── palantir.py           pings de entrada e saída no monitor de jobs
@@ -118,7 +118,7 @@ Cada relatório é tratado de forma independente: um problema num deles não imp
 | Situação | Comportamento | Resultado da execução |
 |---|---|---|
 | Relatório vazio | aviso no log; o CSV fica para conferência | sucesso |
-| Dia já carregado | pula, sem inserir nada | sucesso |
+| Dia já carregado | pula, sem inserir nada; o CSV é apagado | sucesso |
 | Formato do relatório mudou | erro com as colunas que faltam e as que sobram | falha |
 | Valor inválido | erro com arquivo, linha, campo e o valor recusado | falha |
 | Download de um relatório falhou | os outros seguem | falha |
@@ -184,7 +184,7 @@ Para agendar (por exemplo, todo dia às 06:00):
 0 6 * * * cd /caminho/do/projeto && python main.py >> /var/log/coletor-relatorios.log 2>&1
 ```
 
-Em servidor sem interface gráfica, altere `NAVEGADOR_SEM_JANELA = True` em `coletor_relatorios/zanthus.py`.
+Em servidor sem interface gráfica, altere `NAVEGADOR_SEM_JANELA = True` em `coletor_relatorios/automation.py`.
 
 ## Próximos passos
 

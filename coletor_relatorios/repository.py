@@ -167,13 +167,10 @@ class Repository:
         logger.info(resultado)
         return resultado
 
-    def descartar(self, resultado: Resultado) -> bool:
-        """Apaga o CSV após o commit; arquivo pulado fica para conferência."""
-        if not resultado.inseridas:
-            return False
+    def descartar(self, resultado: Resultado) -> None:
+        """Apaga o CSV após o commit, inserido agora ou já presente no banco."""
         resultado.arquivo.unlink(missing_ok=True)
         logger.info("%s removido", resultado.arquivo.name)
-        return True
 
     @staticmethod
     def _datas_ja_carregadas(modelo: type[Raw], datas: Iterable[date]) -> set[date]:

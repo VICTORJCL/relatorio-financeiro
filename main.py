@@ -10,7 +10,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from coletor_relatorios.zanthus import RELATORIOS_ZANTHUS, Zanthus, abrir_navegador
+from coletor_relatorios.automation import RELATORIOS_ZANTHUS, Automation, abrir_navegador
 from coletor_relatorios.models import MODELOS, Raw, conectar_robtom
 from coletor_relatorios.palantir import Palantir
 from coletor_relatorios.repository import ARQUIVO_POR_MODELO, PlanilhaVazia, Repository
@@ -33,12 +33,12 @@ def registrar_etapa(nome: str) -> Iterator[None]:
     logger.info("[OK] %s", nome)
 
 
-def baixar_relatorios(zanthus: Zanthus, dia: date, pasta: Path) -> list[str]:
+def baixar_relatorios(automacao: Automation, dia: date, pasta: Path) -> list[str]:
     falhas = []
     for relatorio in RELATORIOS_ZANTHUS:
         try:
             with registrar_etapa(f"baixar {relatorio.link}"):
-                zanthus.baixar(relatorio, dia, pasta / ARQUIVO_POR_MODELO[relatorio.modelo])
+                automacao.baixar(relatorio, dia, pasta / ARQUIVO_POR_MODELO[relatorio.modelo])
         except Exception:
             falhas.append(f"download {relatorio.link}")
     return falhas
@@ -71,11 +71,11 @@ def carregar_relatorios(repositorio: Repository) -> tuple[list[str], list[str]]:
 def executar(zanthus_url: str, usuario: str, senha: str,
              repositorio: Repository, pasta: Path) -> list[str]:
     pasta.mkdir(exist_ok=True)
-    with abrir_navegador() as pagina:
-        zanthus = Zanthus(pagina, zanthus_url, usuario, senha)
+    with abrir_navegador() as page:
+        automacao = Automation(page, zanthus_url, usuario, senha)
         with registrar_etapa("login no Zanthus"):
-            zanthus.entrar()
-        falhas_de_download = baixar_relatorios(zanthus, date.today() - timedelta(days=DIAS_DE_ATRASO), pasta)
+            automacao.entrar()
+        falhas_de_download = baixar_relatorios(automacao, date.today() - timedelta(days=DIAS_DE_ATRASO), pasta)
 
     resumo, falhas_de_carga = carregar_relatorios(repositorio)
     logger.info("Resumo:\n  %s", "\n  ".join(resumo + falhas_de_download))
